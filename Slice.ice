@@ -10,9 +10,11 @@ module IceGauntlet{
 	bool isValid(string token);
  };
  
- 
- interface GestorMaps{
- 	string getRoom() throws RoomNotExists;
+ interface ObtenerMapa{
+	string getRoom() throws RoomNotExists;
+ }
+
+ interface GestorMapas{
  	void publish(string token, roomData) throws RoomAlreadyExists;
  	void remove (string token, string roomName)throws Unauthorized;
  

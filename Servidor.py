@@ -3,7 +3,7 @@
 
 import sys
 import Ice
-Ice.loadSlice('Handler.ice')
+Ice.loadSlice('IceGauntlet.ice')
 import IceGauntlet
 import json
 import random

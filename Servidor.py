@@ -4,6 +4,7 @@
 import sys
 import Ice
 Ice.loadSlice('IceGauntlet.ice')
+
 import IceGauntlet
 import json
 import random
@@ -12,45 +13,20 @@ import string
 import logging
 import os.path
 
-class ObtenerMapaI(IceGauntlet.ObtenerMapa):
-    def __init__(self):
-        self._users_ = {}
-        self._active_tokens_ = set()
-        #if os.path.exists(USERS_FILE):
-        #    self.refresh()
-        #else:
-        #    self.__commit__()
-
-    #def refresh(self, *args, **kwargs):
-        '''Reload user DB to RAM'''
-        logging.debug('Reloading user database')
-        #with open(USERS_FILE, 'r') as contents:
-        #    self._users_ = json.load(contents)
-        #self._active_tokens_ = set([
-        #    user.get(CURRENT_TOKEN, None) for user in self._users_.values()
-        #])
-
-    #def __commit__(self):
-        #logging.debug('User database updated!')
-        #with open(USERS_FILE, 'w') as contents:
-        #    json.dump(self._users_, contents, indent=4, sort_keys=True)
-
-    def getRoom(self, current=None):
-        print("Metodo getRoom")
-
-
 class GestorMapasI(IceGauntlet.GestorMapas):
-    def __init__(self):
+    def __init__(self, argv):
         self._users_ = {}
         self._active_tokens_ = set()
+        self.autenticacion = Client()
+        self.autenticacion.run(argv)
         #if os.path.exists(USERS_FILE):
         #    self.refresh()
         #else:
         #    self.__commit__()
 
     #def refresh(self, *args, **kwargs):
-        '''Reload user DB to RAM'''
-        logging.debug('Reloading user database')
+        #'''Reload user DB to RAM'''
+        #logging.debug('Reloading user database')
         #with open(USERS_FILE, 'r') as contents:
         #    self._users_ = json.load(contents)
         #self._active_tokens_ = set([
@@ -63,10 +39,26 @@ class GestorMapasI(IceGauntlet.GestorMapas):
         #    json.dump(self._users_, contents, indent=4, sort_keys=True)
 
     def publish(self, token, roomData, current = None):
-    	print("Metodo publish")
+        validClient = self.autenticacion.isValid(token)
+        print(validClient)
 
     def remove(self, token, roomData, current = None):
     	print("Metodo remove")
+
+class Client(Ice.Application):
+    def run(self, argv): 
+        base = self.communicator().stringToProxy(argv[1])
+        autenticacion = IceGauntlet.AuthenticationPrx.checkedCast(base)
+    
+        if not autenticacion:
+            raise RuntimeError("Invalid proxy")
+        
+        self.proxy = autenticacion
+
+        return 0
+    
+    def isValid(self, token):
+        return self.proxy.isValid(token)
 
 class Server(Ice.Application):
     '''
@@ -77,9 +69,9 @@ class Server(Ice.Application):
         Server loop
         '''
         logging.debug('Initializing server...')
-        servant = ObtenerMapaI()
-        servant1 = GestorMapasI()
-        adapter = self.communicator().createObjectAdapter('ObtenerMapaAdapter')
+        #servant1 = ObtenerMapaI()
+        servant = GestorMapasI(args)
+        adapter = self.communicator().createObjectAdapter('GestorMapasAdapter')
         proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
         adapter.addDefaultServant(servant, '')
         adapter.activate()

@@ -16,7 +16,7 @@ module IceGauntlet{
 
     interface GestorMapas{
         void publish(string token, string roomData) throws 	RoomAlreadyExists;
-        void remove (string token, string roomName)throws Unauthorized;
+        void remove (string token, string roomName) throws Unauthorized;
     };
 
 };

@@ -15,10 +15,7 @@ class Client(Ice.Application):
         if not autenticacion:
             raise RuntimeError("Invalid proxy")
 
-        archivo = open(argv[3], 'r') 
-        leer = archivo.read() 
-        print(leer)
-        autenticacion.publish(argv[2], leer)
+        autenticacion.remove(argv[2], argv[3])
 
         return 0
 

@@ -1,9 +1,14 @@
 #!/usr/bin python3
 # -*- coding: utf-8 -*-
 
+# pylint: disable=W1203
+# pylint: disable=W0613
+
 import sys
 import Ice
 Ice.loadSlice('IceGauntlet.ice')
+# pylint: disable=E0401
+# pylint: disable=C0413
 
 import IceGauntlet
 import json

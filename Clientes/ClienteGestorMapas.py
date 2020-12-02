@@ -16,21 +16,36 @@ import IceGauntlet
 '''
 Este cliente es el encargado de ejecutar el publish() y remove()
 '''
-class Client(Ice.Application):
+class ClienteGestorMapas(Ice.Application):
     
     def run(self, argv): 
         broker = self.communicator().stringToProxy(argv[1])
         server = IceGauntlet.RoomManagerPrx.checkedCast(broker)
-    
+
         if not server:
             raise RuntimeError("Invalid proxy")
+      
+        while True:
 
-        '''
-        Otro menu para ver que quiere hacer el usuario
-        '''
+            self.menu()
 
-        self.publish(server, argv)
-        self.remove(server, argv)
+            try:
+                opcion = int(input("Seleccione una de las opciones usando el teclado numérico...\n"))
+
+                if opcion in range(2):
+
+                    if opcion == 1:
+                        self.publish(server, argv)
+                        break
+                    if opcion == 2:
+                        self.remove(server, argv)
+                        break
+
+                else:
+                    print("Error en la opcion elegida.\nSolo se aceptan los numeros 1 y 2.\n")
+
+            except ValueError:
+                print("Error, por favor ingrese solo números.\n")   
 
         return 0
 
@@ -41,4 +56,13 @@ class Client(Ice.Application):
         server.publish(argv[2], leer)
 
     def remove(self, server, argv):
-        server.remove(argv[2], argv[3])    
+        server.remove(argv[2], argv[3]) 
+
+    def menu(self):
+        print("-------- ¿Qué desea hacer? --------\n")
+        print("\t 1.- Publicar un nuevo mapa.\n")
+        print("\t 2.- Eliminar un mapa existente.\n")
+
+if __name__ == "__main__":
+    clienteMapas = ClienteGestorMapas(argv)
+    sys.exit(ClienteGestorMapas().main(sys.argv))   

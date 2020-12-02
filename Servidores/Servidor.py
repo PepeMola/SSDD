@@ -109,12 +109,6 @@ class Client(Ice.Application):
     
     def isValid(self, token):
         return self.proxy.isValid(token)
-    
-def publish():
-    '''
-    Do the stuff
-    '''
-    
 
 #Implementar otro sirviente para hacer el Dungeon
 class Server(Ice.Application):

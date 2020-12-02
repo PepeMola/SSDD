@@ -30,12 +30,29 @@ class ClienteAutenticacion(Ice.Application):
         print("Introduce your actual password.\n")
         actualPass = getpass.getpass()
 
-        '''
-        Hacer aqui un menu con las 2 opciones
-        '''
-        self.getToken(server, user, actualPass)
-        self.changePass(server, user, actualPass)
-        
+        while True:
+
+            self.menu()
+
+            try:
+
+                opcion = int(input("Seleccione una de las opciones usando el teclado numérico...\n"))
+
+                if opcion in range(2):
+                    if opcion == 1:
+                        self.changePass(server, user, actualPass)
+                        break
+                    if opcion == 2:
+                        self.getToken(server, user, actualPass)
+                        break
+                else:
+
+                    print("Error en la opcion elegida.\nSolo se aceptan los numeros 1 y 2.\n")
+
+            except ValueError:
+
+                print("Error, por favor ingrese solo números.\n") 
+
         return 0
     
     def changePass(self, server, user, actualPass):
@@ -48,6 +65,12 @@ class ClienteAutenticacion(Ice.Application):
     def getToken(self, server, user, actualPass):
         token = server.getNewToken(user, actualPass)
         print(token)
+
+    def menu(self):
+        print("-------- ¿Qué desea hacer? --------\n")
+        print("\t 1.- Cambiar contraseña.\n")
+        print("\t 2.- Obtener un nuevo token.\n")
+
 
 if __name__ == "__main__":
     clienteAutenticacion = ClienteAutenticacion(argv)

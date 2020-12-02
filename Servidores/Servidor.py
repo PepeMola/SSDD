@@ -6,10 +6,9 @@
 
 import sys
 import Ice
-Ice.loadSlice('IceGauntlet.ice')
+Ice.loadSlice('../IceGauntlet.ice')
 # pylint: disable=E0401
 # pylint: disable=C0413
-
 import IceGauntlet
 import json
 import random
@@ -25,7 +24,7 @@ CURRENT_TOKEN = 'current_token'
 EXIT_OK = 0
 EXIT_ERROR = 1
 
-class GestorMapasI(IceGauntlet.GestorMapas):
+class RoomManagerI(IceGauntlet.RoomManager):
     def __init__(self, argv):
         self._users_ = {}
         self._vecMaps_ = {}
@@ -40,6 +39,8 @@ class GestorMapasI(IceGauntlet.GestorMapas):
 
     def refresh(self, *args, **kwargs):
         '''Reload user DB to RAM'''
+        
+        ##Poner para que se impriman los comentarios
         logging.debug('Reloading user database')
         with open(MAPS_FILE, 'r') as contents:
             self._maps_ = json.load(contents)
@@ -86,6 +87,14 @@ class GestorMapasI(IceGauntlet.GestorMapas):
         del self._vecMaps_[roomName]
         self.__commit__()
 
+##Modificar el juego de Tobias para que haga de cliente y cuando le des a ejecutar
+##Conecte con este servidor y le de un mapa aleatorio o que pueda elegirlo
+
+#class DungeonI(IceGauntlet.Dungeon):
+ #   def getRoom(self, current=none):
+        #llamar al vector de mapas del RoomManagerI
+        #convertir el diccionario en una lista y sacar un elemento al azar
+
 class Client(Ice.Application):
     def run(self, argv): 
         base = self.communicator().stringToProxy(argv[1])
@@ -107,6 +116,7 @@ def publish():
     '''
     
 
+#Implementar otro sirviente para hacer el Dungeon
 class Server(Ice.Application):
     '''
     Authentication Server
@@ -116,16 +126,18 @@ class Server(Ice.Application):
         Server loop
         '''
         logging.debug('Initializing server...')
-        servant = GestorMapasI(args)
-        adapter = self.communicator().createObjectAdapter('GestorMapasAdapter')
+        servant = RoomManagerI(args)
+        #servant1 = DungeonI(args)
+        adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
         proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
+        #proxyDungeon = adapter.add(servant1, self.communicator().stringToIdentity('juego'))
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
         print('"{}"'.format(proxy), flush=True)
-
+        #print('"{}"'.format(proxyDungeon), flush=True)
         logging.debug('Entering server loop...')        
-        logging.debug('Entering server loop...')
+        #logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
 

@@ -102,7 +102,7 @@ class DungeonI(IceGauntlet.Dungeon):
 
 
 class Client(Ice.Application):
-    ¡def run(self, argv): 
+    def run(self, argv): 
         broker = self.communicator()
         address = broker.stringToProxy(argv[1])
         auth = IceGauntlet.AuthenticationPrx.checkedCast(address)

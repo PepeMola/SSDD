@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# pylint: disable=W1203
+
+'''
+    ICE Gauntlet LOCAL GAME
+'''
+
+import sys
+import atexit
+import logging
+import argparse
+
+import game
+import game.common
+import game.screens
+import game.pyxeltools
+import game.orchestration
+
+#imports necesarios y el slice
+'''
+class client <-- ice app
+    def run(): 
+       
+        user_options = parse_commandline()
+        if not user_options:
+            return BAD_COMMAND_LINE
+
+        
+        dungeon = RemoteDungeonMap(proxy)
+        game.pyxeltools.initialize()
+        gauntlet = game.Game(user_options.hero, dungeon)
+        gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
+        gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
+        gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
+        gauntlet.add_state(game.screens.GameOverScreen, game.common.GAME_OVER_SCREEN)
+        gauntlet.add_state(game.screens.GoodEndScreen, game.common.GOOD_END_SCREEN)
+        gauntlet.start()
+
+        return EXIT_OK
+
+class RemoteDungeonMap:
+  
+    def __init__(self, proxyBueno):
+        self.remotedungeon = icegaunt...checkedcast(proxyBueno)
+        
+    @property
+    def next_room(self):
+        return self.remotedungeon.getRoom()
+
+    @property
+    def finished(self):
+        return False
+
+    '''
+
+EXIT_OK = 0
+BAD_COMMAND_LINE = 1
+
+DEFAULT_ROOM = 'tutorial.json'
+DEFAULT_HERO = game.common.HEROES[0]
+
+
+@atexit.register
+# pylint: disable=W0613
+def bye(*args, **kwargs):
+    '''Exit callback, use for shoutdown'''
+    print('Thanks for playing!')
+# pylint: enable=W0613
+
+def parse_commandline():
+    '''Parse and check commandline'''
+    parser = argparse.ArgumentParser('IceDungeon Local Game')
+    parser.add_argument('PROXY', help='Proxy to get server')
+    parser.add_argument(
+        '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
+        dest='hero', help='Hero to play with'
+    )
+    options = parser.parse_args()
+
+    return options
+
+
+if __name__ == '__main__':
+    sys.exit(main()) #cambiar

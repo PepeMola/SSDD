@@ -1,14 +1,10 @@
 #!/usr/bin python3
 # -*- coding: utf-8 -*-
 
-# pylint: disable=W1203
-# pylint: disable=W0613
-
 import sys
 import Ice
-Ice.loadSlice('../IceGauntlet.ice')
-# pylint: disable=E0401
-# pylint: disable=C0413
+Ice.loadSlice('IceGauntlet.ice')
+
 import IceGauntlet
 import json
 import random
@@ -16,6 +12,7 @@ import signal
 import string
 import logging
 import os.path
+import logging
 
 MAPS_FILE = 'maps.json'
 TOKEN_SIZE = 40
@@ -23,7 +20,6 @@ CURRENT_TOKEN = 'current_token'
 
 EXIT_OK = 0
 EXIT_ERROR = 1
-
 class RoomManagerI(IceGauntlet.RoomManager):
     def __init__(self, argv):
         self._users_ = {}
@@ -39,8 +35,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
 
     def refresh(self, *args, **kwargs):
         '''Reload user DB to RAM'''
-        
-        ##Poner para que se impriman los comentarios
         logging.debug('Reloading user database')
         with open(MAPS_FILE, 'r') as contents:
             self._maps_ = json.load(contents)
@@ -55,17 +49,15 @@ class RoomManagerI(IceGauntlet.RoomManager):
 
     def publish(self, token, roomData, current=None):
         validClient = self.autenticacion.isValid(token)
-        print(validClient)
+        logging.debug(validClient)
         if not validClient:
             raise IceGauntlet.Unauthorized()
-        #print(roomData)
         try:
             map = json.loads(roomData)
             nameMap = map["room"]
         except:
             raise ValueError("Invalid name")
         
-        #print(nameMap)
         if nameMap in self._vecMaps_:
             raise IceGauntlet.RoomAlreadyExists()
 
@@ -73,11 +65,10 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._vecMaps_[nameMap]["token"] = token
         self._vecMaps_[nameMap]["roomData"] = roomData
         self.__commit__()
-        #print(self._vecMaps_)
 
     def remove(self, token, roomName, current=None):
         validClient = self.autenticacion.isValid(token)
-        print(validClient)
+        logging.debug(validClient)
         if not validClient:
             raise IceGauntlet.Unauthorized()
         
@@ -87,13 +78,26 @@ class RoomManagerI(IceGauntlet.RoomManager):
         del self._vecMaps_[roomName]
         self.__commit__()
 
-##Modificar el juego de Tobias para que haga de cliente y cuando le des a ejecutar
-##Conecte con este servidor y le de un mapa aleatorio o que pueda elegirlo
+class DungeonI(IceGauntlet.Dungeon):
+    def __init__(self, argv):
+        self.servant = argv
+        
+    def getRoom(self, current = None):
+        vectorMapas = self.servant._vecMaps_
+        valores = vectorMapas.values()
+        print(valores)
 
-#class DungeonI(IceGauntlet.Dungeon):
- #   def getRoom(self, current=none):
-        #llamar al vector de mapas del RoomManagerI
-        #convertir el diccionario en una lista y sacar un elemento al azar
+    def isEmpty(self, vectorMapas):
+        for element in vectorMapas:
+            if element:
+                randomMap = random.choice(vectorMapas.keys())
+                print(randomMap)
+                return randomMap
+            else:
+                raise IceGauntlet.RoomNotExists()
+    
+        return None  
+
 
 class Client(Ice.Application):
     def run(self, argv): 
@@ -109,29 +113,33 @@ class Client(Ice.Application):
     
     def isValid(self, token):
         return self.proxy.isValid(token)
+    
 
-#Implementar otro sirviente para hacer el Dungeon
 class Server(Ice.Application):
-    '''
-    Authentication Server
-    '''
     def run(self, args):
         '''
         Server loop
         '''
-        logging.debug('Initializing server...')
+        a_logger = logging.getLogger()
+        a_logger.setLevel(logging.DEBUG)
+        output_file_handler = logging.FileHandler("Servidor.log")
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        a_logger.addHandler(output_file_handler)
+        a_logger.addHandler(stdout_handler)
+
+        a_logger.debug('Initializing server...')
         servant = RoomManagerI(args)
-        #servant1 = DungeonI(args)
+        servantDungeon = DungeonI(servant)
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
         proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
-        #proxyDungeon = adapter.add(servant1, self.communicator().stringToIdentity('juego'))
+        proxyDungeon = adapter.add(servantDungeon, self.communicator().stringToIdentity('default2'))
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
         print('"{}"'.format(proxy), flush=True)
-        #print('"{}"'.format(proxyDungeon), flush=True)
-        logging.debug('Entering server loop...')        
-        #logging.debug('Entering server loop...')
+        print('"{}"'.format(proxyDungeon), flush=True)
+
+        logging.debug('Entering server loop...') 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
 

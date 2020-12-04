@@ -80,6 +80,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         del self._vecMaps_[roomName]
         self.__commit__()
 
+
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv

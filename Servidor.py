@@ -78,6 +78,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         del self._vecMaps_[roomName]
         self.__commit__()
 
+<<<<<<< HEAD:Servidor.py
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
@@ -99,6 +100,8 @@ class DungeonI(IceGauntlet.Dungeon):
         return None  
 
 
+=======
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py
 class Client(Ice.Application):
     def run(self, argv): 
         base = self.communicator().stringToProxy(argv[1])
@@ -114,6 +117,14 @@ class Client(Ice.Application):
     def isValid(self, token):
         return self.proxy.isValid(token)
     
+<<<<<<< HEAD:Servidor.py
+=======
+def publish():
+    '''
+    Do the stuff
+    '''
+    
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py
 
 class Server(Ice.Application):
     def run(self, args):
@@ -122,22 +133,34 @@ class Server(Ice.Application):
         '''
         a_logger = logging.getLogger()
         a_logger.setLevel(logging.DEBUG)
+<<<<<<< HEAD:Servidor.py
         output_file_handler = logging.FileHandler("Servidor.log")
+=======
+        output_file_handler = logging.FileHandler("Servidor.py")
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py
         stdout_handler = logging.StreamHandler(sys.stdout)
         a_logger.addHandler(output_file_handler)
         a_logger.addHandler(stdout_handler)
 
         a_logger.debug('Initializing server...')
         servant = RoomManagerI(args)
+<<<<<<< HEAD:Servidor.py
         servantDungeon = DungeonI(servant)
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
         proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
         proxyDungeon = adapter.add(servantDungeon, self.communicator().stringToIdentity('Dungeon'))
+=======
+        adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
+        proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
         print('"{}"'.format(proxy), flush=True)
+<<<<<<< HEAD:Servidor.py
         print('"{}"'.format(proxyDungeon), flush=True)
+=======
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py
 
         logging.debug('Entering server loop...') 
         self.shutdownOnInterrupt()
@@ -149,3 +172,10 @@ class Server(Ice.Application):
 if __name__ == '__main__':
     app = Server()
     sys.exit(app.main(sys.argv))
+<<<<<<< HEAD:Servidor.py
+=======
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: default -t -e 1.1:tcp -h 192.168.1.66 -p 40365 -t 60000
+Entering server loop...
+>>>>>>> 70121a26f785d1c3f19866493083dca170f2abbd:Servidores/Servidor.py

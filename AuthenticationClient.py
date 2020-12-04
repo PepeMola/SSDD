@@ -13,19 +13,21 @@ import getpass
 
 class Client(Ice.Application):
     def run(self, argv): 
-        base = self.communicator().stringToProxy(argv[1])
-        autenticacion = IceGauntlet.AuthenticationPrx.checkedCast(base)
+        broker = self.communicator()
+        address = broker.stringToProxy(argv[1])
+        auth = IceGauntlet.AuthenticationPrx.checkedCast(address)
     
-        if not autenticacion:
+        if not auth:
             raise RuntimeError("Invalid proxy")
         
-        self.proxy = autenticacion
+        self.proxy = auth
 
         return 0
     
     def isValid(self, token):
         return self.proxy.isValid(token)
 
+    
+
 
 sys.exit(Client().main(sys.argv))
-    

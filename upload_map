@@ -10,16 +10,17 @@ import IceGauntlet
 
 class Client(Ice.Application):
     def run(self, argv): 
-        base = self.communicator().stringToProxy(argv[1])
-        autenticacion = IceGauntlet.RoomManagerPrx.checkedCast(base)
+        broker = self.communicator()
+        address = broker.stringToProxy(argv[1])
+        auth = IceGauntlet.RoomManagerPrx.checkedCast(address)
     
-        if not autenticacion:
+        if not auth:
             raise RuntimeError("Invalid proxy")
 
         archivo = open(argv[3], 'r') 
         leer = archivo.read() 
         print(leer)
-        autenticacion.publish(argv[2], leer)
+        auth.publish(argv[2], leer)
 
         return 0
 

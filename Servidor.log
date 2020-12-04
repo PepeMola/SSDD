@@ -85,3 +85,61 @@ Map database updated!
 True
 True
 Map database updated!
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 46561 -t 60000
+Entering server loop...
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 44807 -t 60000
+Entering server loop...
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 41935 -t 60000
+Entering server loop...
+False
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 36989 -t 60000
+Entering server loop...
+False
+False
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 41211 -t 60000
+Entering server loop...
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 36651 -t 60000
+Entering server loop...
+False
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 45743 -t 60000
+Entering server loop...
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 46225 -t 60000
+Entering server loop...
+False
+False
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 35333 -t 60000
+Entering server loop...
+False
+False
+False
+True
+Map database updated!
+True
+True
+Map database updated!
+True
+Map database updated!

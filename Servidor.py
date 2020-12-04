@@ -27,8 +27,8 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._users_ = {}
         self._vecMaps_ = {}
         self._active_tokens_ = set()
-        self.autenticacion = Client()
-        self.autenticacion.run(argv)
+        self.auth = Client()
+        self.auth.run(argv)
         self._maps_ = {}
         if os.path.exists(MAPS_FILE):
             self.refresh()
@@ -50,7 +50,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
             json.dump(self._vecMaps_, contents, indent=4, sort_keys=True)
 
     def publish(self, token, roomData, current=None):
-        validClient = self.autenticacion.isValid(token)
+        validClient = self.auth.isValid(token)
         logging.debug(validClient)
         if not validClient:
             raise IceGauntlet.Unauthorized()
@@ -69,7 +69,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self.__commit__()
 
     def remove(self, token, roomName, current=None):
-        validClient = self.autenticacion.isValid(token)
+        validClient = self.auth.isValid(token)
         logging.debug(validClient)
         if not validClient:
             raise IceGauntlet.Unauthorized()
@@ -79,7 +79,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
         
         del self._vecMaps_[roomName]
         self.__commit__()
-
 
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
@@ -103,19 +102,21 @@ class DungeonI(IceGauntlet.Dungeon):
 
 
 class Client(Ice.Application):
-    def run(self, argv): 
-        base = self.communicator().stringToProxy(argv[1])
-        autenticacion = IceGauntlet.AuthenticationPrx.checkedCast(base)
+    ¡def run(self, argv): 
+        broker = self.communicator()
+        address = broker.stringToProxy(argv[1])
+        auth = IceGauntlet.AuthenticationPrx.checkedCast(address)
     
-        if not autenticacion:
+        if not auth:
             raise RuntimeError("Invalid proxy")
         
-        self.proxy = autenticacion
+        self.proxy = auth
 
         return 0
     
     def isValid(self, token):
         return self.proxy.isValid(token)
+
     
 
 class Server(Ice.Application):

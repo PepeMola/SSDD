@@ -28,10 +28,18 @@ BAD_COMMAND_LINE = 1
 DEFAULT_ROOM = 'tutorial.json'
 DEFAULT_HERO = game.common.HEROES[0]
 
-class RemoteDungeonMap(Ice.Application, game.DungeonMap):
-  
-    def __init__(self, proxyBueno):
-        self.remotedungeon = icegaunt...checkedcast(proxyBueno)
+class RemoteDungeonMap(Ice.Application):
+    def run(self, args):
+        broker = self.communicator()
+        address = broker.stringToProxy(argv[1])
+        mapProxy = IceGauntlet.DungeonPrx.checkedCast(address)
+        if not mapProxy:
+            raise RuntimeError('Invalid proxy')
+
+        return 0
+
+    def __init__(self, argv):
+        self.remotedungeon = argv[1]
         
     @property
     def next_room(self):
@@ -43,12 +51,10 @@ class RemoteDungeonMap(Ice.Application, game.DungeonMap):
 
 class Client(Ice.Application):
     def run(): 
-       
         user_options = parse_commandline()
         if not user_options:
             return BAD_COMMAND_LINE
 
-        
         dungeon = RemoteDungeonMap(proxy)
         game.pyxeltools.initialize()
         gauntlet = game.Game(user_options.hero, dungeon)
@@ -72,7 +78,7 @@ def bye(*args, **kwargs):
 def parse_commandline():
     '''Parse and check commandline'''
     parser = argparse.ArgumentParser('IceDungeon Local Game')
-    parser.add_argument('PROXY', help='Proxy to get server')
+    parser.add_argument('PROXY', type = str, help='Proxy to get server')
     parser.add_argument(
         '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
         dest='hero', help='Hero to play with'
@@ -83,4 +89,4 @@ def parse_commandline():
 
 
 if __name__ == '__main__':
-    sys.exit(main()) #cambiar
+    sys.exit(Client().main(sys.argv))

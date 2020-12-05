@@ -20,14 +20,14 @@ class ClienteAutenticacion(Ice.Application):
     def run(self, argv):
         broker = self.communicator()
         address = broker.stringToProxy(argv[3])
-        auth = IceGauntlet.AuthenticationPrx.checkedCast(address) #Interface Authentication --> IceGauntlet.ice
+        auth = IceGauntlet.AuthenticationPrx.checkedCast(address) 
 
         if not auth:
             raise RuntimeError("Invalid proxy")
         
         user = argv[2]
-
         print(user)
+
         if argv[1] == '-t': # Obtener Token
             actualPass = getpass.getpass()
             sha_actualPass = hashlib.sha256(actualPass.encode()).hexdigest()
@@ -37,10 +37,8 @@ class ClienteAutenticacion(Ice.Application):
             newPass = getpass.getpass()
             sha_newPass = hashlib.sha256(newPass.encode()).hexdigest()
             auth.changePassword(user, None, sha_newPass)
-
-    
-
         return 0
+    
 if __name__ == "__main__":
     clienteAutenticacion = ClienteAutenticacion(argv)
     sys.exit(ClienteAutenticacion().main(sys.argv)) 

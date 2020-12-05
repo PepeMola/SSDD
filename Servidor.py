@@ -79,27 +79,20 @@ class RoomManagerI(IceGauntlet.RoomManager):
         
         del self._vecMaps_[roomName]
         self.__commit__()
+    
+    def getVecMaps(self):
+        return self._vecMaps_
+
 
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
         
     def getRoom(self, current = None):
-        vectorMapas = self.servant._vecMaps_
-        valores = vectorMapas.values()
-        print(valores)
-
-    def isEmpty(self, vectorMapas):
-        for element in vectorMapas:
-            if element:
-                randomMap = random.choice(vectorMapas.keys())
-                print(randomMap)
-                return randomMap
-            else:
-                raise IceGauntlet.RoomNotExists()
-    
-        return None  
-
+        vectorMapas = self.servant.getVecMaps()
+        randomMap = random.sample(list(vectorMapas.values()),1)
+        jsonMap = json.dumps(randomMap)
+        return jsonMap
 
 class Client(Ice.Application):
     def run(self, argv): 

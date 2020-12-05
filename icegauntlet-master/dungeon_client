@@ -10,16 +10,38 @@ import sys
 import atexit
 import logging
 import argparse
-
+import Ice
 import game
 import game.common
 import game.screens
 import game.pyxeltools
 import game.orchestration
 
-#imports necesarios y el slice
-'''
-class client <-- ice app
+Ice.loadSlice('IceGauntlet.ice')
+# pylint: disable=E0401
+# pylint: disable=C0413
+import IceGauntlet
+
+EXIT_OK = 0
+BAD_COMMAND_LINE = 1
+
+DEFAULT_ROOM = 'tutorial.json'
+DEFAULT_HERO = game.common.HEROES[0]
+
+class RemoteDungeonMap(Ice.Application, game.DungeonMap):
+  
+    def __init__(self, proxyBueno):
+        self.remotedungeon = icegaunt...checkedcast(proxyBueno)
+        
+    @property
+    def next_room(self):
+        return self.remotedungeon.getRoom()
+
+    @property
+    def finished(self):
+        return False
+
+class Client(Ice.Application):
     def run(): 
        
         user_options = parse_commandline()
@@ -38,27 +60,6 @@ class client <-- ice app
         gauntlet.start()
 
         return EXIT_OK
-
-class RemoteDungeonMap:
-  
-    def __init__(self, proxyBueno):
-        self.remotedungeon = icegaunt...checkedcast(proxyBueno)
-        
-    @property
-    def next_room(self):
-        return self.remotedungeon.getRoom()
-
-    @property
-    def finished(self):
-        return False
-
-    '''
-
-EXIT_OK = 0
-BAD_COMMAND_LINE = 1
-
-DEFAULT_ROOM = 'tutorial.json'
-DEFAULT_HERO = game.common.HEROES[0]
 
 
 @atexit.register

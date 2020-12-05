@@ -11,15 +11,19 @@ Ice.loadSlice('IceGauntlet.ice')
 import IceGauntlet
  
 class ClientePrueba(Ice.Application):
-    def run(self, argv): 
-        base = self.communicator().stringToProxy(argv[1])
+    def run(self,argv): 
+        archivo= open("icegauntlet-master/dungeonFile.txt","r")
+        proxy = archivo.read()
+        archivo.close()
+        print(proxy)
+        base = self.communicator().stringToProxy(proxy)
         auth = IceGauntlet.DungeonPrx.checkedCast(base)
     
         if not auth:
             raise RuntimeError("Invalid proxy")
 
-        auth.getRoom()
-        
+        mapData = auth.getRoom()
+        print(mapData)
 
         return 0
 

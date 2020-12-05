@@ -39,7 +39,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         '''Reload user DB to RAM'''
         logging.debug('Reloading user database')
         with open(MAPS_FILE, 'r') as contents:
-            self._maps_ = json.load(contents)
+            self._vecMaps_ = json.load(contents)
         self._active_tokens_ = set([
             map.get(CURRENT_TOKEN, None) for map in self._vecMaps_.values()
         ])
@@ -89,9 +89,13 @@ class DungeonI(IceGauntlet.Dungeon):
         self.servant = argv
         
     def getRoom(self, current = None):
+        print("Getting Room")
         vectorMapas = self.servant.getVecMaps()
         randomMap = random.sample(list(vectorMapas.values()),1)
-        jsonMap = json.dumps(randomMap)
+        jsonMap = json.dumps(randomMap[0])
+        #jsonMapDec = json.loads(jsonMap)
+        print('Random choice')
+        print(jsonMap)
         return jsonMap
 
 class Client(Ice.Application):
@@ -134,7 +138,10 @@ class Server(Ice.Application):
         adapter.activate()
         logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
         print('"{}"'.format(proxy), flush=True)
-        print('"{}"'.format(proxyDungeon), flush=True)
+        file = open("icegauntlet-master/dungeonFile.txt", "w")
+        file.write('{}'.format(proxyDungeon))
+        file.close()
+        #print('"{}"'.format(proxyDungeon), flush=True)
 
         logging.debug('Entering server loop...') 
         self.shutdownOnInterrupt()

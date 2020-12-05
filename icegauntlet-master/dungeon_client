@@ -32,15 +32,23 @@ class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.mapProxy = None
         self.next_room = None
-        self.remotedungeon = argv[1]
+        #self.remotedungeon = argv[1]
 
-    def run(self):
+    def run(self,argv): 
+        archivo= open("icegauntlet-master/dungeonFile.txt","r")
+        proxy = archivo.read()
+        archivo.close()
+        print(proxy)
         broker = self.communicator()
-        address = broker.stringToProxy(self.remotedungeon)
+        address = broker.stringToProxy(proxy)
         self.mapProxy = IceGauntlet.DungeonPrx.checkedCast(address)
+    
         if not mapProxy:
-            raise RuntimeError('Invalid proxy')
-        
+            raise RuntimeError("Invalid proxy")
+
+        mapData = auth.getRoom()
+        print(mapData)
+
         self.next_room = self.next_rooms()
         return 0
         
@@ -53,15 +61,16 @@ class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
         return False
 
 class Client(Ice.Application):
-    def run(self, argv): 
-        user_options = parse_commandline()
-        if not user_options:
-            return BAD_COMMAND_LINE
+    def run(self, address): 
+        #user_options = parse_commandline()
+        #if not user_options:
+         #   return BAD_COMMAND_LINE
 
-        dungeon = RemoteDungeonMap(argv[1])
+        dungeon = RemoteDungeonMap(address)
         #dungeon = RemoteDungeonMap(user_options.PROXY)
         game.pyxeltools.initialize()
-        gauntlet = game.Game(user_options.hero, dungeon)
+        gauntlet = game.Game(self,dungeon)
+        #gauntlet = game.Game(user_options.hero, dungeon)
         gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
         gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
         gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
@@ -81,15 +90,15 @@ def bye(*args, **kwargs):
 
 def parse_commandline():
     '''Parse and check commandline'''
-    parser = argparse.ArgumentParser('IceDungeon Remote Game')
-    parser.add_argument('PROXY', type = str, help='Proxy to get server')
-    parser.add_argument(
-        '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
-        dest='hero', help='Hero to play with'
-    )
-    options = parser.parse_args()
+    #parser = argparse.ArgumentParser('IceDungeon Remote Game')
+    #parser.add_argument('PROXY', type = str, help='Proxy to get server')
+    #parser.add_argument(
+     #   '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
+      #  dest='hero', help='Hero to play with'
+    #)
+    #options = parser.parse_args()
 
-    return options
+    #return options
 
 
 if __name__ == '__main__':

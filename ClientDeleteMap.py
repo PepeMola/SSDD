@@ -7,13 +7,12 @@ Ice.loadSlice('IceGauntlet.ice')
 # pylint: disable=E0401
 # pylint: disable=C0413
 import IceGauntlet
- 
+
 class Client(Ice.Application):
-    def run(self, argv): 
+    def run(self, argv):
         broker = self.communicator()
         address = broker.stringToProxy(argv[1])
         auth = IceGauntlet.RoomManagerPrx.checkedCast(address)
-    
         if not auth:
             raise RuntimeError("Invalid proxy")
 
@@ -22,4 +21,3 @@ class Client(Ice.Application):
         return 0
 
 sys.exit(Client().main(sys.argv))
-

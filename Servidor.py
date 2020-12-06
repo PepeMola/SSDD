@@ -1,20 +1,18 @@
-#!/usr/bin python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
+import json
+import random
+import logging
+import os.path
 import Ice
 Ice.loadSlice('IceGauntlet.ice')
 # pylint: disable=E0401
 # pylint: disable=C0413
 
 import IceGauntlet
-import json
-import random
-import signal
-import string
-import logging
-import os.path
-import logging
+
 
 MAPS_FILE = 'maps.json'
 TOKEN_SIZE = 40
@@ -35,14 +33,13 @@ class RoomManagerI(IceGauntlet.RoomManager):
         else:
             self.__commit__()
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self):
         '''Reload user DB to RAM'''
         logging.debug('Reloading user database')
         with open(MAPS_FILE, 'r') as contents:
             self._vecMaps_ = json.load(contents)
         self._active_tokens_ = set([
-            map.get(CURRENT_TOKEN, None) for map in self._vecMaps_.values()
-        ])
+            map.get(CURRENT_TOKEN, None) for map in self._vecMaps_.values()])
 
     def __commit__(self):
         logging.debug('Map database updated!')
@@ -59,10 +56,8 @@ class RoomManagerI(IceGauntlet.RoomManager):
             nameMap = map["room"]
         except:
             raise ValueError("Invalid name")
-        
         if nameMap in self._vecMaps_:
             raise IceGauntlet.RoomAlreadyExists()
-
         self._vecMaps_[nameMap] = {}
         self._vecMaps_[nameMap]["token"] = token
         self._vecMaps_[nameMap]["roomData"] = roomData
@@ -73,25 +68,19 @@ class RoomManagerI(IceGauntlet.RoomManager):
         logging.debug(validClient)
         if not validClient:
             raise IceGauntlet.Unauthorized()
-        
         if roomName not in self._vecMaps_:
             raise IceGauntlet.RoomNotExists()
-        
         del self._vecMaps_[roomName]
         self.__commit__()
-    
     def getVecMaps(self):
         return self._vecMaps_
-
-
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
-        
-    def getRoom(self, current = None):
+    def getRoom(self, current=None):
         print("Getting Room")
         vectorMapas = self.servant.getVecMaps()
-        randomMap = random.sample(list(vectorMapas.values()),1)
+        randomMap = random.sample(list(vectorMapas.values()), 1)
         jsonMap = json.dumps(randomMap[0])
         #jsonMapDec = json.loads(jsonMap)
         print('Random choice')
@@ -99,23 +88,16 @@ class DungeonI(IceGauntlet.Dungeon):
         return jsonMap
 
 class Client(Ice.Application):
-    def run(self, argv): 
+    def run(self, argv):
         broker = self.communicator()
         address = broker.stringToProxy(argv[1])
         auth = IceGauntlet.AuthenticationPrx.checkedCast(address)
-    
         if not auth:
             raise RuntimeError("Invalid proxy")
-        
         self.proxy = auth
-
         return 0
-    
     def isValid(self, token):
         return self.proxy.isValid(token)
-
-    
-
 class Server(Ice.Application):
     def run(self, args):
         '''
@@ -143,7 +125,7 @@ class Server(Ice.Application):
         file.close()
         #print('"{}"'.format(proxyDungeon), flush=True)
 
-        logging.debug('Entering server loop...') 
+        logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
 

@@ -25,8 +25,7 @@ try:
     user, password, proxy = sys.argv[1:]
 except ValueError:
     print('Command arguments: {} <user> <password> <proxy>'.format(
-        os.path.basename(sys.argv[0]))
-    )
+        os.path.basename(sys.argv[0])))
     sys.exit(1)
 
 # Compose command

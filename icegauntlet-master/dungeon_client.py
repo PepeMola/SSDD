@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# pylint: disable=W1203
 
 '''
     ICE Gauntlet LOCAL GAME
@@ -8,15 +7,12 @@
 
 import sys
 import atexit
-import logging
-import argparse
 import Ice
 import game
 import game.common
 import game.screens
 import game.pyxeltools
 import game.orchestration
-import json
 
 Ice.loadSlice('../IceGauntlet.ice')
 # pylint: disable=E0401
@@ -31,45 +27,32 @@ DEFAULT_HERO = game.common.HEROES[0]
 class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.mapProxy = None
-        #self.remotedungeon = argv[1]
 
     @property
-    def next_room(self): 
+    def next_room(self):
         print('GETTING ROOM!!')
-        archivo= open("./dungeonFile.txt","r")
+        archivo = open("./dungeonFile.txt", "r")
         proxy = archivo.read()
         archivo.close()
 
         broker = self.communicator()
         address = broker.stringToProxy(proxy)
         self.mapProxy = IceGauntlet.DungeonPrx.checkedCast(address)
-    
-        
         if not self.mapProxy:
             raise RuntimeError("Invalid proxy")
 
         mapData = self.mapProxy.getRoom()
         return mapData
-        
-    #@property
-    #def next_rooms(self):
-    #    return self.mapProxy.getRoom()
 
     @property
     def finished(self):
         return False
 
 class Client(Ice.Application):
-    def run(self, address): 
-        #user_options = parse_commandline()
-        #if not user_options:
-         #   return BAD_COMMAND_LINE
-
+    def run(self, address):
         dungeon = RemoteDungeonMap(address)
-        #dungeon = RemoteDungeonMap(user_options.PROXY)
         game.pyxeltools.initialize()
         gauntlet = game.Game(self, dungeon)
-        #gauntlet = game.Game(user_options.hero, dungeon)
         gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
         gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
         gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
@@ -86,19 +69,6 @@ def bye(*args, **kwargs):
     '''Exit callback, use for shoutdown'''
     print('Thanks for playing!')
 # pylint: enable=W0613
-
-def parse_commandline():
-    '''Parse and check commandline'''
-    #parser = argparse.ArgumentParser('IceDungeon Remote Game')
-    #parser.add_argument('PROXY', type = str, help='Proxy to get server')
-    #parser.add_argument(
-     #   '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
-      #  dest='hero', help='Hero to play with'
-    #)
-    #options = parser.parse_args()
-
-    #return options
-
 
 if __name__ == '__main__':
     sys.exit(Client().main(sys.argv))

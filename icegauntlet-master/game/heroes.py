@@ -45,6 +45,7 @@ class Hero(Actor):
 
 def new(hero_type, actor_identifier=None, attributes=None):
     '''Hero factory'''
+    hero_type = WARRIOR
     attributes = attributes or {}
     if hero_type == WARRIOR:
         new_actor = Hero({

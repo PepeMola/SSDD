@@ -31,30 +31,29 @@ DEFAULT_HERO = game.common.HEROES[0]
 class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.mapProxy = None
-        self.next_room = None
         #self.remotedungeon = argv[1]
 
-    def run(self,argv): 
-        archivo= open("icegauntlet-master/dungeonFile.txt","r")
+    @property
+    def next_room(self): 
+        print('GETTING ROOM!!')
+        archivo= open("./dungeonFile.txt","r")
         proxy = archivo.read()
         archivo.close()
-        print(proxy)
+
         broker = self.communicator()
         address = broker.stringToProxy(proxy)
         self.mapProxy = IceGauntlet.DungeonPrx.checkedCast(address)
     
-        if not mapProxy:
+        
+        if not self.mapProxy:
             raise RuntimeError("Invalid proxy")
 
-        mapData = auth.getRoom()
-        print(mapData)
-
-        self.next_room = self.next_rooms()
-        return 0
+        mapData = self.mapProxy.getRoom()
+        return mapData
         
-    @property
-    def next_rooms(self):
-        return self.mapProxy.getRoom()
+    #@property
+    #def next_rooms(self):
+    #    return self.mapProxy.getRoom()
 
     @property
     def finished(self):
@@ -69,7 +68,7 @@ class Client(Ice.Application):
         dungeon = RemoteDungeonMap(address)
         #dungeon = RemoteDungeonMap(user_options.PROXY)
         game.pyxeltools.initialize()
-        gauntlet = game.Game(self,dungeon)
+        gauntlet = game.Game(self, dungeon)
         #gauntlet = game.Game(user_options.hero, dungeon)
         gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
         gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)

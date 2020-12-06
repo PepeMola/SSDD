@@ -6,7 +6,7 @@
 Orchestration of game in a dungeon room
 '''
 
-
+import json
 import sys
 import math
 import time
@@ -139,7 +139,12 @@ class RoomOrchestration:
         return self._game_objects_
 
     def _load_map_(self):
-        map_name, map_data = load_json_map(game.assets.search(self._room_))
+        print('Loading map', self._room_)
+        mapObject = json.loads(self._room_)
+        data = json.loads(mapObject.get('roomData'))
+        map_data = data.get("data")
+        map_name = data.get("room")
+
         # Get objects and replace by empty tile
         y = 0
         for row in map_data:

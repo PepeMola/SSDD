@@ -5,4 +5,4 @@ echo 'Vamos a jugar...'
 
 cd icegauntlet-master
 
-./dungeon_client.py
+./dungeon_client.py "$1"

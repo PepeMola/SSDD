@@ -21,8 +21,8 @@ class ClienteAutenticacion(Ice.Application):
         if not auth:
             raise RuntimeError("Invalid proxy")
         user=argv[2]
-        print(user)
-        actualPass=getpass.getpass()
+        #print(user)
+        actualPass=getpass.getpass('Password:')
         sha_actualPass=hashlib.sha256(actualPass.encode()).hexdigest()
         # Obtener Token
         if argv[1]=='-t':

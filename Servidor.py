@@ -35,14 +35,12 @@ class RoomManagerI(IceGauntlet.RoomManager):
 
     def refresh(self):
         '''Reload user DB to RAM'''
-        logging.debug('Reloading user database')
         with open(MAPS_FILE, 'r') as contents:
             self._vecMaps_ = json.load(contents)
         self._active_tokens_ = set([
             map.get(CURRENT_TOKEN, None) for map in self._vecMaps_.values()])
 
     def __commit__(self):
-        logging.debug('Map database updated!')
         with open(MAPS_FILE, 'w') as contents:
             json.dump(self._vecMaps_, contents, indent=4, sort_keys=True)
 
@@ -78,13 +76,9 @@ class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
     def getRoom(self, current=None):
-        print("Getting Room")
         vectorMapas = self.servant.getVecMaps()
         randomMap = random.sample(list(vectorMapas.values()), 1)
         jsonMap = json.dumps(randomMap[0])
-        #jsonMapDec = json.loads(jsonMap)
-        print('Random choice')
-        print(jsonMap)
         return jsonMap
 
 class Client(Ice.Application):
@@ -100,17 +94,6 @@ class Client(Ice.Application):
         return self.proxy.isValid(token)
 class Server(Ice.Application):
     def run(self, args):
-        '''
-        Server loop
-        '''
-        a_logger = logging.getLogger()
-        a_logger.setLevel(logging.DEBUG)
-        output_file_handler = logging.FileHandler("Servidor.log")
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        a_logger.addHandler(output_file_handler)
-        a_logger.addHandler(stdout_handler)
-
-        a_logger.debug('Initializing server...')
         servant = RoomManagerI(args)
         servantDungeon = DungeonI(servant)
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
@@ -118,14 +101,11 @@ class Server(Ice.Application):
         proxyDungeon = adapter.add(servantDungeon, self.communicator().stringToIdentity('Dungeon'))
         adapter.addDefaultServant(servant, '')
         adapter.activate()
-        logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
         print('"{}"'.format(proxy), flush=True)
         file = open("icegauntlet-master/dungeonFile.txt", "w")
         file.write('{}'.format(proxyDungeon))
         file.close()
-        #print('"{}"'.format(proxyDungeon), flush=True)
 
-        logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
 

@@ -3,4 +3,4 @@
 
 echo 'Obteniendo nuevo token...'
 
-./AuthenticationClient.py "$1" "$2" "$3"
+./getNewToken.py "$1" "$2" "$3"

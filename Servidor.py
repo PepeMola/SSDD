@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pylint: disable=E0401
+# pylint: disable=C0413
+# pylint: disable=C0103
+# pylint: disable=C0114
+# pylint: disable=C0115
+# pylint: disable=C0116
+# pylint: disable=W0221
 
 import sys
 import json
@@ -8,8 +15,6 @@ import logging
 import os.path
 import Ice
 Ice.loadSlice('IceGauntlet.ice')
-# pylint: disable=E0401
-# pylint: disable=C0413
 
 import IceGauntlet
 
@@ -23,7 +28,7 @@ EXIT_ERROR = 1
 class RoomManagerI(IceGauntlet.RoomManager):
     def __init__(self, argv):
         self._users_ = {}
-        self._vecMaps_ = {}
+        self._vecmaps_ = {}
         self._active_tokens_ = set()
         self.auth = Client()
         self.auth.run(argv)
@@ -36,50 +41,50 @@ class RoomManagerI(IceGauntlet.RoomManager):
     def refresh(self):
         '''Reload user DB to RAM'''
         with open(MAPS_FILE, 'r') as contents:
-            self._vecMaps_ = json.load(contents)
+            self._vecmaps_ = json.load(contents)
         self._active_tokens_ = set([
-            map.get(CURRENT_TOKEN, None) for map in self._vecMaps_.values()])
+            map.get(CURRENT_TOKEN, None) for map in self._vecmaps_.values()])
 
     def __commit__(self):
         with open(MAPS_FILE, 'w') as contents:
-            json.dump(self._vecMaps_, contents, indent=4, sort_keys=True)
+            json.dump(self._vecmaps_, contents, indent=4, sort_keys=True)
 
     def publish(self, token, roomData, current=None):
-        validClient = self.auth.isValid(token)
-        logging.debug(validClient)
-        if not validClient:
+        validclient = self.auth.isValid(token)
+        logging.debug(validclient)
+        if not validclient:
             raise IceGauntlet.Unauthorized()
         try:
             map = json.loads(roomData)
-            nameMap = map["room"]
+            namemap = map["room"]
         except:
             raise ValueError("Invalid name")
-        if nameMap in self._vecMaps_:
+        if namemap in self._vecmaps_:
             raise IceGauntlet.RoomAlreadyExists()
-        self._vecMaps_[nameMap] = {}
-        self._vecMaps_[nameMap]["token"] = token
-        self._vecMaps_[nameMap]["roomData"] = roomData
+        self._vecmaps_[namemap] = {}
+        self._vecmaps_[namemap]["token"] = token
+        self._vecmaps_[namemap]["roomData"] = roomData
         self.__commit__()
 
     def remove(self, token, roomName, current=None):
-        validClient = self.auth.isValid(token)
-        logging.debug(validClient)
-        if not validClient:
+        validclient = self.auth.isValid(token)
+        logging.debug(validclient)
+        if not validclient:
             raise IceGauntlet.Unauthorized()
-        if roomName not in self._vecMaps_:
+        if roomName not in self._vecmaps_:
             raise IceGauntlet.RoomNotExists()
-        del self._vecMaps_[roomName]
+        del self._vecmaps_[roomName]
         self.__commit__()
-    def getVecMaps(self):
-        return self._vecMaps_
+    def getvecmaps(self):
+        return self._vecmaps_
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
     def getRoom(self, current=None):
-        vectorMapas = self.servant.getVecMaps()
-        randomMap = random.sample(list(vectorMapas.values()), 1)
-        jsonMap = json.dumps(randomMap[0])
-        return jsonMap
+        vectormapas = self.servant.getvecmaps()
+        randommap = random.sample(list(vectormapas.values()), 1)
+        jsonmap = json.dumps(randommap[0])
+        return jsonmap
 
 class Client(Ice.Application):
     def run(self, argv):
@@ -95,15 +100,15 @@ class Client(Ice.Application):
 class Server(Ice.Application):
     def run(self, args):
         servant = RoomManagerI(args)
-        servantDungeon = DungeonI(servant)
+        servantdungeon = DungeonI(servant)
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
         proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
-        proxyDungeon = adapter.add(servantDungeon, self.communicator().stringToIdentity('Dungeon'))
+        proxydungeon = adapter.add(servantdungeon, self.communicator().stringToIdentity('Dungeon'))
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         print('"{}"'.format(proxy), flush=True)
         file = open("icegauntlet-master/dungeonFile.txt", "w")
-        file.write('{}'.format(proxyDungeon))
+        file.write('{}'.format(proxydungeon))
         file.close()
 
         self.shutdownOnInterrupt()
@@ -113,5 +118,5 @@ class Server(Ice.Application):
 
 
 if __name__ == '__main__':
-    app = Server()
-    sys.exit(app.main(sys.argv))
+    APP = Server()
+    sys.exit(APP.main(sys.argv))

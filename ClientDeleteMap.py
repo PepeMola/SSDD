@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pylint: disable=E0401
+# pylint: disable=C0413
+# pylint: disable=C0103
+# pylint: disable=C0114
+# pylint: disable=C0115
+# pylint: disable=W0221
 
 import sys
 import Ice
 Ice.loadSlice('IceGauntlet.ice')
-# pylint: disable=E0401
-# pylint: disable=C0413
+
 import IceGauntlet
 
 class Client(Ice.Application):

@@ -6,6 +6,7 @@ Script to run authentication user
 
 import os
 import sys
+# pylint: disable=C0103
 
 try:
     import pexpect

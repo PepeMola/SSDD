@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-'''
-    ICE Gauntlet LOCAL GAME
-'''
+# pylint: disable=E0401
+# pylint: disable=C0413
+# pylint: disable=C0115
+# pylint: disable=C0116
+# pylint: disable=W0221
 
 import sys
 import atexit
@@ -15,8 +16,7 @@ import game.pyxeltools
 import game.orchestration
 
 Ice.loadSlice('../IceGauntlet.ice')
-# pylint: disable=E0401
-# pylint: disable=C0413
+
 import IceGauntlet
 
 EXIT_OK = 0
@@ -26,7 +26,7 @@ DEFAULT_HERO = game.common.HEROES[0]
 
 class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
     def __init__(self, argv):
-        self.mapProxy = None
+        self.mapproxy = None
 
     @property
     def next_room(self):
@@ -37,12 +37,12 @@ class RemoteDungeonMap(Ice.Application, IceGauntlet.Dungeon):
 
         broker = self.communicator()
         address = broker.stringToProxy(proxy)
-        self.mapProxy = IceGauntlet.DungeonPrx.checkedCast(address)
-        if not self.mapProxy:
+        self.mapproxy = IceGauntlet.DungeonPrx.checkedCast(address)
+        if not self.mapproxy:
             raise RuntimeError("Invalid proxy")
 
-        mapData = self.mapProxy.getRoom()
-        return mapData
+        mapdata = self.mapproxy.getRoom()
+        return mapdata
 
     @property
     def finished(self):

@@ -1,0 +1,7 @@
+#!/bin/bash
+# -*- ENCODING: UTF-8 -*-
+
+echo 'Eliminando mapa...'
+
+./ClientDeleteMap.py "$1" "$2" "$3"
+	

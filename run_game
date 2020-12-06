@@ -1,0 +1,8 @@
+#!/bin/bash
+# -*- ENCODING: UTF-8 -*-
+
+echo 'Vamos a jugar...'
+
+cd icegauntlet-master
+
+./dungeon_client.py

@@ -475,3 +475,26 @@ Initializing server...
 Reloading user database
 Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 192.168.1.66 -p 43967 -t 60000
 Entering server loop...
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 10.0.2.15 -p 46405 -t 60000
+Entering server loop...
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 10.0.2.15 -p 35147 -t 60000
+Entering server loop...
+Initializing server...
+Reloading user database
+Adapter ready, servant proxy: RoomManager -t -e 1.1:tcp -h 10.0.2.15 -p 33155 -t 60000
+Entering server loop...
+True
+True
+Map database updated!
+True
+Map database updated!
+True
+True
+Map database updated!
+True
+True
+Map database updated!

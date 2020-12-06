@@ -1,0 +1,4 @@
+#!/bin/bash
+# -*- ENCODING: UTF-8 -*-
+
+./Servidor.py --Ice.Config=server.conf "$1"

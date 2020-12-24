@@ -1,0 +1,4 @@
+#!/bin/bash
+# -*- ENCODING: UTF-8 -*-
+
+./getNewToken.py "$1" "$2" "$3"

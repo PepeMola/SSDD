@@ -1,0 +1,6 @@
+#!/bin/bash
+# -*- ENCODING: UTF-8 -*-
+
+cd icegauntlet-master
+
+./dungeon_client.py "$1"

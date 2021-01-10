@@ -22,7 +22,6 @@ class Client(Ice.Application):
             raise RuntimeError("Invalid proxy")
         archivo = open(argv[3], 'r')
         leer = archivo.read()
-        print(leer)
         auth.publish(argv[2], leer)
         return 0
 

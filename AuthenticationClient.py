@@ -17,6 +17,7 @@ Ice.loadSlice('IceGauntlet.ice')
 
 import IceGauntlet
 
+#python3 ./AuthenticationClient.py -p pepe "default -t -e 1.1:tcp -h 10.0.2.15 -p 9091 -t 60000"
 class ClienteAutenticacion(Ice.Application):
     def run(self, argv):
         broker = self.communicator()

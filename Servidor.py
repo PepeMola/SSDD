@@ -17,7 +17,8 @@ import Ice
 Ice.loadSlice('IceGauntlet.ice')
 
 import IceGauntlet
-
+import uuid
+import fnmatch
 
 MAPS_FILE = 'maps.json'
 TOKEN_SIZE = 40
@@ -33,10 +34,20 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self.auth = Client()
         self.auth.run(argv)
         self._maps_ = {}
+        self._id_ = str(uuid.uuid4()) #Identificador unico para nuestro servicio de gestion de mapas
+        self._maps_path_ = "./icegauntlet-master/assets" 
+        self._mapList_ = self.llenarMapas(self._maps_path_)
         if os.path.exists(MAPS_FILE):
             self.refresh()
         else:
             self.__commit__()
+
+    def llenarMapas(self, path):
+        listaMapas = []
+        for mapa in os.listdir(path):
+            if fnmatch.fnmatch(mapa, '*.json'):
+                listaMapas.append(mapa)
+        return listaMapas
 
     def refresh(self):
         '''Reload user DB to RAM'''
@@ -50,7 +61,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
             json.dump(self._vecmaps_, contents, indent=4, sort_keys=True)
 
     def publish(self, token, roomData, current=None):
-        validclient = self.auth.isValid(token)
+        validclient = self.auth.getOwner(token)
         logging.debug(validclient)
         if not validclient:
             raise IceGauntlet.Unauthorized()
@@ -62,19 +73,22 @@ class RoomManagerI(IceGauntlet.RoomManager):
         if namemap in self._vecmaps_:
             raise IceGauntlet.RoomAlreadyExists()
         self._vecmaps_[namemap] = {}
-        self._vecmaps_[namemap]["token"] = token
+        self._vecmaps_[namemap]["user"] = validclient
         self._vecmaps_[namemap]["roomData"] = roomData
         self.__commit__()
 
     def remove(self, token, roomName, current=None):
-        validclient = self.auth.isValid(token)
+        validclient = self.auth.getOwner(token)
         logging.debug(validclient)
+
         if not validclient:
             raise IceGauntlet.Unauthorized()
+        
         if roomName not in self._vecmaps_:
             raise IceGauntlet.RoomNotExists()
         del self._vecmaps_[roomName]
         self.__commit__()
+
     def getvecmaps(self):
         return self._vecmaps_
 class DungeonI(IceGauntlet.Dungeon):
@@ -95,8 +109,10 @@ class Client(Ice.Application):
             raise RuntimeError("Invalid proxy")
         self.proxy = auth
         return 0
-    def isValid(self, token):
-        return self.proxy.isValid(token)
+
+    def getOwner(self, token):
+        return self.proxy.getOwner(token)
+
 class Server(Ice.Application):
     def run(self, args):
         servant = RoomManagerI(args)

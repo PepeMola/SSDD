@@ -19,6 +19,7 @@ Ice.loadSlice('IceGauntlet.ice')
 import IceGauntlet
 import uuid
 import fnmatch
+import IceStorm
 
 MAPS_FILE = 'maps.json'
 TOKEN_SIZE = 40
@@ -36,13 +37,14 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._maps_ = {}
         self._id_ = str(uuid.uuid4()) #Identificador unico para nuestro servicio de gestion de mapas
         self._maps_path_ = "./icegauntlet-master/assets" 
-        self._mapList_ = self.llenarMapas(self._maps_path_)
+        self._mapList_ = self.llenarMapas(self._maps_path_) #Lista de mapas al iniciar RoomManager
+        self._sync_ = RoomManagerSyncI(self._id_)
         if os.path.exists(MAPS_FILE):
             self.refresh()
         else:
             self.__commit__()
 
-    def llenarMapas(self, path):
+    def llenarMapas(self, path): #Metodo para llenar la lista _mapList_
         listaMapas = []
         for mapa in os.listdir(path):
             if fnmatch.fnmatch(mapa, '*.json'):
@@ -77,6 +79,12 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._vecmaps_[namemap]["roomData"] = roomData
         self.__commit__()
 
+        '''
+        Aqui debemos crear una instancia del RoomManagerSync para propagar newRoom()
+        la propagacion debe contener: 
+            1. Nombre del mapa
+            2. Id de la instancia uuid
+        '''
     def remove(self, token, roomName, current=None):
         validclient = self.auth.getOwner(token)
         logging.debug(validclient)
@@ -88,7 +96,11 @@ class RoomManagerI(IceGauntlet.RoomManager):
             raise IceGauntlet.RoomNotExists()
         del self._vecmaps_[roomName]
         self.__commit__()
-
+        '''
+        Aqui debemos crear una instancia del RoomManagerSync para propagar removedRoom()
+        la propagacion debe contener: 
+            1. Nombre del mapa
+        '''
     def getvecmaps(self):
         return self._vecmaps_
 class DungeonI(IceGauntlet.Dungeon):
@@ -99,7 +111,6 @@ class DungeonI(IceGauntlet.Dungeon):
         randommap = random.sample(list(vectormapas.values()), 1)
         jsonmap = json.dumps(randommap[0])
         return jsonmap
-
 class Client(Ice.Application):
     def run(self, argv):
         broker = self.communicator()
@@ -112,14 +123,15 @@ class Client(Ice.Application):
 
     def getOwner(self, token):
         return self.proxy.getOwner(token)
-
 class Server(Ice.Application):
     def run(self, args):
         servant = RoomManagerI(args)
         servantdungeon = DungeonI(servant)
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
-        proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
-        proxydungeon = adapter.add(servantdungeon, self.communicator().stringToIdentity('Dungeon'))
+        #proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
+        proxy = adapter.addWithUUID(servant)
+        #proxydungeon = adapter.add(servantdungeon, self.communicator().stringToIdentity('Dungeon'))
+        proxydungeon = adapter.addWithUUID(servantdungeon)
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         print('"{}"'.format(proxy), flush=True)
@@ -132,6 +144,37 @@ class Server(Ice.Application):
 
         return 0
 
+class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
+    def __init__(self, identity):
+        self._topic_name_ = "RoomManagerSyncChannel"
+        self._topic_manager_ = self.get_topic_manager()
+        self._id_ = ""
+
+    def hello(self):
+        print("Hola Maquina aqui andamos.")
+        return 0
+    
+    def announce(self):
+        print("Ok maquina.")
+        return 0
+    
+    def uploaded_map(self):
+        print("El mapa subido es: ")
+        return 0
+    
+    def removed_map(self):
+        print("Mapa eliminado: ")
+        return 0
+
+    def get_topic_manager(self):
+        key = 'IceStorm.TopicManager.Proxy'
+        proxy = self.communicator().propertyToProxy(key)
+        if proxy is None:
+            print("property {} not set".format(key))
+            return None
+
+        print("Using IceStorm in: '%s'" % key)
+        return IceStorm.TopicManagerPrx.checkedCast(proxy)
 
 if __name__ == '__main__':
     APP = Server()

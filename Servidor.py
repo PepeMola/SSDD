@@ -38,7 +38,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._id_ = str(uuid.uuid4()) #Identificador unico para nuestro servicio de gestion de mapas
         self._maps_path_ = "./icegauntlet-master/assets" 
         self._mapList_ = self.llenarMapas(self._maps_path_) #Lista de mapas al iniciar RoomManager
-        self._sync_ = RoomManagerSyncI(self._id_)
         if os.path.exists(MAPS_FILE):
             self.refresh()
         else:
@@ -127,17 +126,24 @@ class Server(Ice.Application):
     def run(self, args):
         servant = RoomManagerI(args)
         servantdungeon = DungeonI(servant)
+        servantEvents = RoomManagerSyncI(servant._id_) #Pasamos id del RoomManager para distinguirlo
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
         #proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
         proxy = adapter.addWithUUID(servant)
         #proxydungeon = adapter.add(servantdungeon, self.communicator().stringToIdentity('Dungeon'))
         proxydungeon = adapter.addWithUUID(servantdungeon)
+        #Proxy de canal de eventos
+        proxyEvents = adapter.addWithUUID(servantEvents)
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         print('"{}"'.format(proxy), flush=True)
         file = open("icegauntlet-master/dungeonFile.txt", "w")
         file.write('{}'.format(proxydungeon))
         file.close()
+
+        room_manager = IceGauntlet.RoomManagerPrx.uncheckedcast(proxyEvents) #Instanciamos el manager
+
+        servantEvents.hello(room_manager)
 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
@@ -150,8 +156,24 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
         self._topic_manager_ = self.get_topic_manager()
         self._id_ = ""
 
-    def hello(self):
-        print("Hola Maquina aqui andamos.")
+    def hello(self, RoomManager):
+
+        if not self._topic_manager_:
+            print('Invalid proxy')
+            return 2
+
+        topic_name = "RoomManagerSyncChannel"
+        try:
+            topic = self._topic_manager_.retrieve(topic_name)
+        except IceStorm.NoSuchTopic:
+            print("no such topic found, creating")
+            topic = self._topic_manager_.create(topic_name)
+
+        publisher_hello = topic.getPublisher()
+        RoomManagerSync = IceGauntlet.RoomManagerSyncPrx.uncheckedcast(publisher_hello)
+
+        print("Hello mi pana, soy el publisher: ", self._id_) #Controlador de metodo, eliminar antes de subir la practica
+        RoomManagerSync.hello(RoomManager, self._id_)
         return 0
     
     def announce(self):

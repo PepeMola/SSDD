@@ -146,10 +146,11 @@ class Server(Ice.Application):
         file.close()
 
         room_manager = IceGauntlet.RoomManagerPrx.uncheckedCast(proxy) #Instanciamos el manager
+        servantEvents._room_manager_ = room_manager
 
-        servantEvents.hello(room_manager, servant._id_)
+        servantEvents._publisher_.hello(room_manager, servant._id_)
         servantEvents._topic_channel_.subscribeAndGetPublisher(qos, proxyEvents)
-        print("Esperando eventos...\n")
+        print("Esperando eventos...")
 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
@@ -159,11 +160,12 @@ class Server(Ice.Application):
 class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def __init__(self, identity):
         self._id_ = identity
+        self._room_manager_ = None
         self._topic_name_ = "RoomManagerSyncChannel"
         self._topic_manager_ = self.get_topic_manager()
         self._topic_channel_ = self.get_topic()
         self._publisher_ = self.get_publisher()
-        self._pool_servers_ = []
+        self._pool_servers_ = {}
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
@@ -193,21 +195,21 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
         return RoomManagerSync
 
     def hello(self, RoomManager, RoomManagerId, current=None):
-
         if RoomManagerId not in self._pool_servers_:
-            #print("Hello mi pana: ", RoomManagerId)
-            self._publisher_.announce(RoomManager, self._id_)
-            self._pool_servers_.append(self._id_)
-    
+            self._pool_servers_[id] = RoomManager
+            print("Hello ", RoomManagerId)
+            self._publisher_.announce(self._room_manager_, self._id_)
+             
     def announce(self, RoomManager, RoomManagerId, current=None):
-        print("Hello, I am ", RoomManagerId)
-        self._pool_servers_.append(RoomManagerId)
-    
-    def uploaded_map(self):
+        if RoomManagerId not in self._pool_servers_:
+            self._pool_servers_[id] = RoomManager
+            print("Hi my pana, my id is: ", RoomManagerId)
+
+    def newRoom(self):
         print("El mapa subido es: ")
         return 0
     
-    def removed_map(self):
+    def removedRoom(self):
         print("Mapa eliminado: ")
         return 0
 

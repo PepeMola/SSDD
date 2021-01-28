@@ -102,6 +102,9 @@ class RoomManagerI(IceGauntlet.RoomManager):
         '''
     def getvecmaps(self):
         return self._vecmaps_
+
+    def availableRooms(self):
+        return 0
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
@@ -124,6 +127,7 @@ class Client(Ice.Application):
         return self.proxy.getOwner(token)
 class Server(Ice.Application):
     def run(self, args):
+        qos = {}
         servant = RoomManagerI(args)
         servantdungeon = DungeonI(servant)
         servantEvents = RoomManagerSyncI(servant._id_) #Pasamos id del RoomManager para distinguirlo
@@ -141,9 +145,11 @@ class Server(Ice.Application):
         file.write('{}'.format(proxydungeon))
         file.close()
 
-        room_manager = IceGauntlet.RoomManagerPrx.uncheckedcast(proxyEvents) #Instanciamos el manager
+        room_manager = IceGauntlet.RoomManagerPrx.uncheckedCast(proxy) #Instanciamos el manager
 
-        servantEvents.hello(room_manager)
+        servantEvents.hello(room_manager, servant._id_)
+        servantEvents._topic_channel_.subscribeAndGetPublisher(qos, proxyEvents)
+        print("Esperando eventos...\n")
 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
@@ -152,41 +158,12 @@ class Server(Ice.Application):
 
 class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def __init__(self, identity):
+        self._id_ = identity
         self._topic_name_ = "RoomManagerSyncChannel"
         self._topic_manager_ = self.get_topic_manager()
-        self._id_ = ""
-
-    def hello(self, RoomManager):
-
-        if not self._topic_manager_:
-            print('Invalid proxy')
-            return 2
-
-        topic_name = "RoomManagerSyncChannel"
-        try:
-            topic = self._topic_manager_.retrieve(topic_name)
-        except IceStorm.NoSuchTopic:
-            print("no such topic found, creating")
-            topic = self._topic_manager_.create(topic_name)
-
-        publisher_hello = topic.getPublisher()
-        RoomManagerSync = IceGauntlet.RoomManagerSyncPrx.uncheckedcast(publisher_hello)
-
-        print("Hello mi pana, soy el publisher: ", self._id_) #Controlador de metodo, eliminar antes de subir la practica
-        RoomManagerSync.hello(RoomManager, self._id_)
-        return 0
-    
-    def announce(self):
-        print("Ok maquina.")
-        return 0
-    
-    def uploaded_map(self):
-        print("El mapa subido es: ")
-        return 0
-    
-    def removed_map(self):
-        print("Mapa eliminado: ")
-        return 0
+        self._topic_channel_ = self.get_topic()
+        self._publisher_ = self.get_publisher()
+        self._pool_servers_ = []
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
@@ -197,6 +174,42 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
 
         print("Using IceStorm in: '%s'" % key)
         return IceStorm.TopicManagerPrx.checkedCast(proxy)
+
+    def get_topic(self):
+        if not self._topic_manager_:
+            print('Invalid proxy')
+            return 2
+        try:
+            topic = self._topic_manager_.retrieve(self._topic_name_)
+        except IceStorm.NoSuchTopic:
+            print("no such topic found, creating")
+            topic = self._topic_manager_.create(self._topic_name_)
+
+        return topic
+
+    def get_publisher(self):
+        publisher = self.get_topic().getPublisher()
+        RoomManagerSync = IceGauntlet.RoomManagerSyncPrx.uncheckedCast(publisher)
+        return RoomManagerSync
+
+    def hello(self, RoomManager, RoomManagerId, current=None):
+
+        if RoomManagerId not in self._pool_servers_:
+            #print("Hello mi pana: ", RoomManagerId)
+            self._publisher_.announce(RoomManager, self._id_)
+            self._pool_servers_.append(self._id_)
+    
+    def announce(self, RoomManager, RoomManagerId, current=None):
+        print("Hello, I am ", RoomManagerId)
+        self._pool_servers_.append(RoomManagerId)
+    
+    def uploaded_map(self):
+        print("El mapa subido es: ")
+        return 0
+    
+    def removed_map(self):
+        print("Mapa eliminado: ")
+        return 0
 
 if __name__ == '__main__':
     APP = Server()

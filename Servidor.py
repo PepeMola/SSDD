@@ -43,7 +43,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         else:
             self.__commit__()
 
-    def llenarMapas(self, path): #Metodo para llenar la lista _mapList_
+    def llenarMapas(self, path, current = None): #Metodo para llenar la lista _mapList_
         listaMapas = []
         for mapa in os.listdir(path):
             if fnmatch.fnmatch(mapa, '*.json'):
@@ -73,6 +73,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
             raise ValueError("Invalid name")
         if namemap in self._vecmaps_:
             raise IceGauntlet.RoomAlreadyExists()
+        
         self._vecmaps_[namemap] = {}
         self._vecmaps_[namemap]["user"] = validclient
         self._vecmaps_[namemap]["roomData"] = roomData
@@ -84,6 +85,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
             1. Nombre del mapa
             2. Id de la instancia uuid
         '''
+
     def remove(self, token, roomName, current=None):
         validclient = self.auth.getOwner(token)
         logging.debug(validclient)
@@ -100,11 +102,18 @@ class RoomManagerI(IceGauntlet.RoomManager):
         la propagacion debe contener: 
             1. Nombre del mapa
         '''
-    def getvecmaps(self):
+    def getvecmaps(self, current = None):
         return self._vecmaps_
 
-    def availableRooms(self):
-        return 0
+    def getRoom(self, roomName, current=None):
+        vectorMapas = self._mapList_
+        if roomName in vectorMapas:
+            jsonMap = json.dumps(roomName)
+            return str(jsonMap)
+
+    def availableRooms(self, current = None):
+        availableMaps = self._mapList_
+        return availableMaps
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
@@ -147,9 +156,9 @@ class Server(Ice.Application):
 
         room_manager = IceGauntlet.RoomManagerPrx.uncheckedCast(proxy) #Instanciamos el manager
         servantEvents._room_manager_ = room_manager
-
-        servantEvents._publisher_.hello(room_manager, servant._id_)
         servantEvents._topic_channel_.subscribeAndGetPublisher(qos, proxyEvents)
+        servantEvents._publisher_.hello(room_manager, servant._id_)
+        
         print("Esperando eventos...")
 
         self.shutdownOnInterrupt()
@@ -160,7 +169,7 @@ class Server(Ice.Application):
 class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def __init__(self, identity):
         self._id_ = identity
-        self._room_manager_ = None
+        self.room_manager = None
         self._topic_name_ = "RoomManagerSyncChannel"
         self._topic_manager_ = self.get_topic_manager()
         self._topic_channel_ = self.get_topic()
@@ -186,7 +195,6 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
         except IceStorm.NoSuchTopic:
             print("no such topic found, creating")
             topic = self._topic_manager_.create(self._topic_name_)
-
         return topic
 
     def get_publisher(self):
@@ -196,22 +204,32 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
 
     def hello(self, RoomManager, RoomManagerId, current=None):
         if RoomManagerId not in self._pool_servers_:
-            self._pool_servers_[id] = RoomManager
+            self._pool_servers_[RoomManagerId] = RoomManager
             print("Hello ", RoomManagerId)
             self._publisher_.announce(self._room_manager_, self._id_)
              
     def announce(self, RoomManager, RoomManagerId, current=None):
         if RoomManagerId not in self._pool_servers_:
-            self._pool_servers_[id] = RoomManager
+            self._pool_servers_[RoomManagerId] = RoomManager
             print("Hi my pana, my id is: ", RoomManagerId)
+            room_storage = RoomManager.availableRooms()
 
-    def newRoom(self):
-        print("El mapa subido es: ")
-        return 0
+            for map in room_storage:
+                if map not in self._pool_servers_[RoomManagerId]._mapList_:
+                    self._pool_servers_[RoomManagerId].getRoom(map)
+                    print(map)
+
+    def newRoom(self, roomName, RoomManagerId, current=None):
+        if RoomManagerId in self._pool_servers_:
+            room = self._pool_servers_[RoomManagerId].getRoom(roomName)
+            #Añadir el mapa al almacen de mapas
+            print("newRoom")
     
-    def removedRoom(self):
-        print("Mapa eliminado: ")
-        return 0
+    def removedRoom(self, roomName, current=None):
+        room = self._pool_servers_[RoomManagerId].getRoom(roomName)
+        #Borrar el mapa del almacen
+        print("removedRoom")
+
 
 if __name__ == '__main__':
     APP = Server()

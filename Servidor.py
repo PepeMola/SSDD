@@ -58,7 +58,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
         return listaMapas
 
     def refresh(self):
-        '''Reload user DB to RAM'''
         with open(MAPS_FILE, 'r') as contents:
             self._vecmaps_ = json.load(contents)
         self._active_tokens_ = set([
@@ -83,7 +82,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         
         self._vecmaps_[namemap] = {}
         self._vecmaps_[namemap]["user"] = validclient
-        self._vecmaps_[namemap]["roomData"] = roomData
+        self._vecmaps_[namemap]["data"] = map["data"]
         self.__commit__()
 
         self.manager_sync.newRoom(namemap, self._id_)
@@ -108,13 +107,13 @@ class RoomManagerI(IceGauntlet.RoomManager):
     def getRoom(self, roomName, current=None):
         vectorMapas = self._mapList_
         if roomName in vectorMapas:
-            archivo = str(self._maps_path_ + '/' + roomName)
+            archivo = str(self._maps_path_ + '/' + roomName + '.json')
+            print("El archivo:", archivo)
+
             with open(archivo, 'r') as data:
                 roomData = data.read()
+                print("El room data: ", roomData)
             return roomData
-        elif roomName not in vectorMapas:
-            print("Croqueta")
-            raise IceGauntlet.RoomNotExists()
 
     def availableRooms(self, current = None):
         availableMaps = self._mapList_
@@ -249,7 +248,7 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
             for map in availableMaps:
                 if map not in self._room_storage_:
                     new = self._pool_servers_[RoomManagerId].getRoom(map)
-                    path = PATH_ROOMS + '/' + map
+                    path = str(PATH_ROOMS + '/' + map)
                     with open(path, 'x') as f:
                         f.write(new)
                     f.close()
@@ -257,15 +256,15 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def newRoom(self, roomName, RoomManagerId, current=None):
         if RoomManagerId in self._pool_servers_:
             room = self._pool_servers_[RoomManagerId].getRoom(roomName)
-            path = PATH_ROOMS + '/' + map
+            print("My room: ", room)         
+            path = PATH_ROOMS + '/' + roomName + '.json'
             with open(path, 'x') as f:
-                f.write(new)
+                f.write(room)
             f.close()
             print("New room: ", roomName, "\nUploaded by: ", RoomManagerId)
     
     def removedRoom(self, roomName, current=None):
         room = self._pool_servers_[RoomManagerId].getRoom(roomName)
-        #Borrar el mapa del almacen
         print("removedRoom")
 
 if __name__ == '__main__':

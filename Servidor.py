@@ -20,10 +20,14 @@ import IceGauntlet
 import uuid
 import fnmatch
 import IceStorm
+import tempfile
+import psutil
+import shutil
 
 MAPS_FILE = 'maps.json'
 TOKEN_SIZE = 40
 CURRENT_TOKEN = 'current_token'
+PATH_ROOMS = "./icegauntlet-master/assets"
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -36,7 +40,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self.auth.run(argv)
         self._maps_ = {}
         self._id_ = str(uuid.uuid4()) #Identificador unico para nuestro servicio de gestion de mapas
-        self._maps_path_ = "./icegauntlet-master/assets" 
+        self._maps_path_ = PATH_ROOMS 
         self._mapList_ = self.llenarMapas(self._maps_path_) #Lista de mapas al iniciar RoomManager
         if os.path.exists(MAPS_FILE):
             self.refresh()
@@ -48,6 +52,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         for mapa in os.listdir(path):
             if fnmatch.fnmatch(mapa, '*.json'):
                 listaMapas.append(mapa)
+                print("Mi mapa: ", mapa)   
         return listaMapas
 
     def refresh(self):
@@ -108,8 +113,12 @@ class RoomManagerI(IceGauntlet.RoomManager):
     def getRoom(self, roomName, current=None):
         vectorMapas = self._mapList_
         if roomName in vectorMapas:
-            jsonMap = json.dumps(roomName)
-            return str(jsonMap)
+            archivo = str(self._maps_path_ + '/' + roomName)
+            with open(archivo, 'r') as data:
+                roomData = data.read()
+            return roomData
+        elif roomName not in vectorMapas:
+            raise IceGauntlet.RoomNotExists()
 
     def availableRooms(self, current = None):
         availableMaps = self._mapList_
@@ -137,25 +146,30 @@ class Client(Ice.Application):
 class Server(Ice.Application):
     def run(self, args):
         qos = {}
+        global PATH_ROOMS
+
+        if self.serverFinder() == True:
+            print("Hola soy no se que no se cuantas")
+            PATH_ROOMS = tempfile.mkdtemp()
+            
+
         servant = RoomManagerI(args)
         servantdungeon = DungeonI(servant)
-        servantEvents = RoomManagerSyncI(servant._id_) #Pasamos id del RoomManager para distinguirlo
+        servantEvents = RoomManagerSyncI(servant) #Pasamos id del RoomManager para distinguirlo
+        
         adapter = self.communicator().createObjectAdapter('RoomManagerAdapter')
-        #proxy = adapter.add(servant, self.communicator().stringToIdentity('RoomManager'))
+        
         proxy = adapter.addWithUUID(servant)
-        #proxydungeon = adapter.add(servantdungeon, self.communicator().stringToIdentity('Dungeon'))
         proxydungeon = adapter.addWithUUID(servantdungeon)
-        #Proxy de canal de eventos
         proxyEvents = adapter.addWithUUID(servantEvents)
+
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         print('"{}"'.format(proxy), flush=True)
         file = open("icegauntlet-master/dungeonFile.txt", "w")
         file.write('{}'.format(proxydungeon))
-        file.close()
-
         room_manager = IceGauntlet.RoomManagerPrx.uncheckedCast(proxy) #Instanciamos el manager
-        servantEvents._room_manager_ = room_manager
+        servantEvents.room_manager = room_manager
         servantEvents._topic_channel_.subscribeAndGetPublisher(qos, proxyEvents)
         servantEvents._publisher_.hello(room_manager, servant._id_)
         
@@ -164,17 +178,37 @@ class Server(Ice.Application):
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
 
+        if PATH_ROOMS != "./icegauntlet-master/assets":
+            shutil.rmtree(PATH_ROOMS)
+
         return 0
+    
+    def serverFinder(self):
+        cont = 0
+
+        for proc in psutil.process_iter():
+            if proc.name().startswith('python3'):
+                for arg in proc.cmdline():
+                    if arg.startswith('./'):
+                        arg = arg[2:]
+                    if arg == 'Servidor.py':
+                        cont = cont + 1
+        print(cont)
+        if cont == 1:
+            return False
+        else:
+            return True
 
 class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
-    def __init__(self, identity):
-        self._id_ = identity
+    def __init__(self, servant):
+        self._id_ = servant._id_
         self.room_manager = None
         self._topic_name_ = "RoomManagerSyncChannel"
         self._topic_manager_ = self.get_topic_manager()
         self._topic_channel_ = self.get_topic()
         self._publisher_ = self.get_publisher()
         self._pool_servers_ = {}
+        self._room_storage_ = servant._mapList_ 
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
@@ -206,30 +240,32 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
         if RoomManagerId not in self._pool_servers_:
             self._pool_servers_[RoomManagerId] = RoomManager
             print("Hello ", RoomManagerId)
-            self._publisher_.announce(self._room_manager_, self._id_)
+            self._publisher_.announce(self.room_manager, self._id_)
              
     def announce(self, RoomManager, RoomManagerId, current=None):
         if RoomManagerId not in self._pool_servers_:
             self._pool_servers_[RoomManagerId] = RoomManager
             print("Hi my pana, my id is: ", RoomManagerId)
-            room_storage = RoomManager.availableRooms()
+            availableMaps = RoomManager.availableRooms()
 
-            for map in room_storage:
-                if map not in self._pool_servers_[RoomManagerId]._mapList_:
-                    self._pool_servers_[RoomManagerId].getRoom(map)
-                    print(map)
+            for map in availableMaps:
+                if map not in self._room_storage_:
+                    new = self._pool_servers_[RoomManagerId].getRoom(map)
+                    path = PATH_ROOMS + '/' + map
+                    with open(path, 'x') as f:
+                        f.write(new)
+                    f.close()
 
     def newRoom(self, roomName, RoomManagerId, current=None):
         if RoomManagerId in self._pool_servers_:
             room = self._pool_servers_[RoomManagerId].getRoom(roomName)
-            #Añadir el mapa al almacen de mapas
+            
             print("newRoom")
     
     def removedRoom(self, roomName, current=None):
         room = self._pool_servers_[RoomManagerId].getRoom(roomName)
         #Borrar el mapa del almacen
         print("removedRoom")
-
 
 if __name__ == '__main__':
     APP = Server()

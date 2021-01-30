@@ -42,6 +42,8 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._id_ = str(uuid.uuid4()) #Identificador unico para nuestro servicio de gestion de mapas
         self._maps_path_ = PATH_ROOMS 
         self._mapList_ = self.llenarMapas(self._maps_path_) #Lista de mapas al iniciar RoomManager
+        self.manager_sync = None
+
         if os.path.exists(MAPS_FILE):
             self.refresh()
         else:
@@ -84,12 +86,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
         self._vecmaps_[namemap]["roomData"] = roomData
         self.__commit__()
 
-        '''
-        Aqui debemos crear una instancia del RoomManagerSync para propagar newRoom()
-        la propagacion debe contener: 
-            1. Nombre del mapa
-            2. Id de la instancia uuid
-        '''
+        self.manager_sync.newRoom(namemap, self._id_)
 
     def remove(self, token, roomName, current=None):
         validclient = self.auth.getOwner(token)
@@ -102,11 +99,9 @@ class RoomManagerI(IceGauntlet.RoomManager):
             raise IceGauntlet.RoomNotExists()
         del self._vecmaps_[roomName]
         self.__commit__()
-        '''
-        Aqui debemos crear una instancia del RoomManagerSync para propagar removedRoom()
-        la propagacion debe contener: 
-            1. Nombre del mapa
-        '''
+
+        self.manager_sync.removedRoom(roomName, self._id_)
+        
     def getvecmaps(self, current = None):
         return self._vecmaps_
 
@@ -118,6 +113,7 @@ class RoomManagerI(IceGauntlet.RoomManager):
                 roomData = data.read()
             return roomData
         elif roomName not in vectorMapas:
+            print("Croqueta")
             raise IceGauntlet.RoomNotExists()
 
     def availableRooms(self, current = None):
@@ -169,9 +165,11 @@ class Server(Ice.Application):
         file = open("icegauntlet-master/dungeonFile.txt", "w")
         file.write('{}'.format(proxydungeon))
         room_manager = IceGauntlet.RoomManagerPrx.uncheckedCast(proxy) #Instanciamos el manager
+        
         servantEvents.room_manager = room_manager
         servantEvents._topic_channel_.subscribeAndGetPublisher(qos, proxyEvents)
         servantEvents._publisher_.hello(room_manager, servant._id_)
+        servant.manager_sync = servantEvents
         
         print("Esperando eventos...")
 
@@ -259,8 +257,11 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def newRoom(self, roomName, RoomManagerId, current=None):
         if RoomManagerId in self._pool_servers_:
             room = self._pool_servers_[RoomManagerId].getRoom(roomName)
-            
-            print("newRoom")
+            path = PATH_ROOMS + '/' + map
+            with open(path, 'x') as f:
+                f.write(new)
+            f.close()
+            print("New room: ", roomName, "\nUploaded by: ", RoomManagerId)
     
     def removedRoom(self, roomName, current=None):
         room = self._pool_servers_[RoomManagerId].getRoom(roomName)

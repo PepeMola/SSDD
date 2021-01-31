@@ -1,5 +1,5 @@
 # **Práctica SSDD**
-## **Segunda entrega o L1**
+## **Tercera entrega o L2**
 ### **Repositorio:**<br>
   [Enlace al repositorio](https://github.com/PepeMola/SSDD/tree/main) o,<br>
   https://github.com/PepeMola/SSDD/tree/main<br>

@@ -81,7 +81,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
 
         self._mapList_.append(namemap+".json")
         self.manager_sync.get_publisher().newRoom(namemap, self._id_)
-    
     def publishByServer(self, roomName, roomData):
         print("Event publishByServer", roomName)
         self._mapList_.append(roomName+".json")
@@ -106,7 +105,6 @@ class RoomManagerI(IceGauntlet.RoomManager):
 
     def removeByServer(self, roomName):
         self._mapList_.remove(roomName)
-        
         if path.exists(PATH_ROOMS + '/' + roomName):
             remove(PATH_ROOMS + '/' + roomName)
 

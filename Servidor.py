@@ -49,12 +49,14 @@ class RoomManagerI(IceGauntlet.RoomManager):
         else:
             self.__commit__()
 
+    def getId(self):
+        return self._id_
+
     def llenarMapas(self, path, current = None): #Metodo para llenar la lista _mapList_
         listaMapas = []
         for mapa in os.listdir(path):
             if fnmatch.fnmatch(mapa, '*.json'):
-                listaMapas.append(mapa)
-                print("Mi mapa: ", mapa)   
+                listaMapas.append(mapa) 
         return listaMapas
 
     def refresh(self):
@@ -72,19 +74,24 @@ class RoomManagerI(IceGauntlet.RoomManager):
         logging.debug(validclient)
         if not validclient:
             raise IceGauntlet.Unauthorized()
+        map = {}
         try:
             map = json.loads(roomData)
             namemap = map["room"]
+            map["user"] = validclient
+            map["token"] = token
         except:
             raise ValueError("Invalid name")
-        if namemap in self._vecmaps_:
+        if namemap in self._mapList_:
             raise IceGauntlet.RoomAlreadyExists()
         
-        self._vecmaps_[namemap] = {}
-        self._vecmaps_[namemap]["user"] = validclient
-        self._vecmaps_[namemap]["data"] = map["data"]
-        self.__commit__()
+        archivo = str(PATH_ROOMS + '/' + namemap + '.json')
+        with open(archivo, 'w') as data:
+            json.dump(map, data, indent=4, sort_keys=True)
+        data.close()
 
+        self._mapList_.append(namemap+".json")
+       
         self.manager_sync.newRoom(namemap, self._id_)
 
     def remove(self, token, roomName, current=None):
@@ -94,38 +101,52 @@ class RoomManagerI(IceGauntlet.RoomManager):
         if not validclient:
             raise IceGauntlet.Unauthorized()
         
-        if roomName not in self._vecmaps_:
+        if roomName not in self._mapList_:
             raise IceGauntlet.RoomNotExists()
-        del self._vecmaps_[roomName]
+        del self._mapList_[roomName]
         self.__commit__()
 
         self.manager_sync.removedRoom(roomName, self._id_)
-        
-    def getvecmaps(self, current = None):
-        return self._vecmaps_
 
     def getRoom(self, roomName, current=None):
+        if roomName.find(".json") == -1:
+            roomName = roomName + ".json"
         vectorMapas = self._mapList_
         if roomName in vectorMapas:
-            archivo = str(self._maps_path_ + '/' + roomName + '.json')
-            print("El archivo:", archivo)
-
+            
+            print("Este es el nombre: ", roomName)
+            archivo = str(self._maps_path_ + '/' + roomName)
             with open(archivo, 'r') as data:
                 roomData = data.read()
-                print("El room data: ", roomData)
             return roomData
 
     def availableRooms(self, current = None):
         availableMaps = self._mapList_
         return availableMaps
+
+    def publishSync(self, token, roomData, Current=None):
+        print('PUBLISHING!!!!')
+        validclient = self.auth.getOwner(token)
+        logging.debug(validclient)
+        if not validclient:
+            raise IceGauntlet.Unauthorized()
+        map = {}
+        try:
+            map = json.loads(roomData)
+            namemap = map["room"]
+            map["user"] = validclient
+        except:
+            raise ValueError("Invalid name")
+        if namemap in self._mapList_:
+            raise IceGauntlet.RoomAlreadyExists()
+        
+        archivo = str(PATH_ROOMS + '/' + namemap + '.json')
+        with open(archivo, 'w') as data:
+            json.dump(map, data, indent=4, sort_keys=True)
+        data.close()
 class DungeonI(IceGauntlet.Dungeon):
     def __init__(self, argv):
         self.servant = argv
-    def getRoom(self, current=None):
-        vectormapas = self.servant.getvecmaps()
-        randommap = random.sample(list(vectormapas.values()), 1)
-        jsonmap = json.dumps(randommap[0])
-        return jsonmap
 class Client(Ice.Application):
     def run(self, argv):
         broker = self.communicator()
@@ -198,6 +219,7 @@ class Server(Ice.Application):
 
 class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
     def __init__(self, servant):
+        self.room_manager = servant
         self._id_ = servant._id_
         self.room_manager = None
         self._topic_name_ = "RoomManagerSyncChannel"
@@ -254,15 +276,15 @@ class RoomManagerSyncI(Ice.Application, IceGauntlet.RoomManagerSync):
                     f.close()
 
     def newRoom(self, roomName, RoomManagerId, current=None):
-        if RoomManagerId in self._pool_servers_:
-            room = self._pool_servers_[RoomManagerId].getRoom(roomName)
-            print("My room: ", room)         
-            path = PATH_ROOMS + '/' + roomName + '.json'
-            with open(path, 'x') as f:
-                f.write(room)
-            f.close()
-            print("New room: ", roomName, "\nUploaded by: ", RoomManagerId)
-    
+        print("NewRoom Event from: ",RoomManagerId)
+        room = self._pool_servers_[RoomManagerId].getRoom(roomName+".json")
+        for i in self._pool_servers_:
+            print("Propagating to: ",i)
+            #if RoomManagerId != i:
+            room_json = json.loads(room)
+            token = room_json["token"]
+            self._pool_servers_[i].publishSync(token, room)
+
     def removedRoom(self, roomName, current=None):
         room = self._pool_servers_[RoomManagerId].getRoom(roomName)
         print("removedRoom")
